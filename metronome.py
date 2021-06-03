@@ -1,39 +1,14 @@
+"""
+Show a light for every beat.
+Show the BPM as text.
+Use 4/4 timing. Four beats to a bar.
 
-import numpy as np
-import librosa
+Press space until the BPM gets to what you want.
+"""
 import time
 import os
 import pygame as pg
-import tkinter, tkinter.filedialog, tkinter.messagebox
 
-filepath = "./assets/music/Perfume_Polyrhythm.mp3"
-music_bpm = 120
-def bpm_analyze():
-    duration = 30
-    x_sr = 200
-    bpm_min, bpm_max = 60, 240
-
-    # 楽曲の信号を読み込む
-    y, sr = librosa.load(filepath, offset=38, duration=duration, mono=True)
-
-    # ビート検出用信号の生成
-    # リサンプリング & パワー信号の抽出
-    x = np.abs(librosa.resample(y, sr, x_sr)) ** 2
-    x_len = len(x)
-
-    # 各BPMに対応する複素正弦波行列を生成
-    M = np.zeros((bpm_max, x_len), dtype=np.complex)
-    for bpm in range(bpm_min, bpm_max):
-        thete = 2 * np.pi * (bpm/60) * (np.arange(0, x_len) / x_sr)
-        M[bpm] = np.exp(-1j * thete)
-
-    # 各BPMとのマッチング度合い計算
-    #（複素正弦波行列とビート検出用信号との内積）
-    x_bpm = np.abs(np.dot(M, x))
-
-    # BPM　を算出
-    bpm = np.argmax(x_bpm)
-    return bpm
 
 def average_bpm(times):
     """ For the list of times(seconds since epoch) return
@@ -48,7 +23,7 @@ def average_bpm(times):
     return 60.0 / avg_space
 
 
-class Bpm():
+class Bpm:
     """ Beats Per Minute.
 
     By press()ing this, the bpm counter will change.
@@ -60,8 +35,8 @@ class Bpm():
         self.last_press = time.time()
         """ The time since epoch of the last press.
         """
-        self.bpm = music_bpm
-        self.bpm_average = music_bpm
+        self.bpm = 120
+        self.bpm_average = 120
         """ The average bpm from the last 4 presses.
         """
 
@@ -204,19 +179,17 @@ def main():
 
     pygame_dir = os.path.split(os.path.abspath(pg.__file__))[0]
     data_dir = os.path.join(pygame_dir, "examples", "data")
-    sound = pg.mixer.Sound('./assets/click.wav')
-    font = pg.font.Font(None, 55)
+    sound = pg.mixer.Sound(os.path.join(data_dir, "punch.wav"))
 
-    pg.display.set_caption('music and metronome')
+    pg.display.set_caption('press space 4 times to adjust BPM timing')
 
     background = pg.Surface(screen.get_size())
     background = background.convert()
     background.fill((0, 0, 0))
+
     allsprites = pg.sprite.LayeredDirty([bpm_counter, bpm_light])
     allsprites.clear(screen, background)
 
-    mp3_music = pg.mixer.Sound(filepath)
-    mp3_music.play()
     while going:
         events = pg.event.get()
         for e in events:
@@ -242,16 +215,6 @@ def main():
         # print(rects)
         # print(clock.get_fps())
 
-def selectFile():
-    root = tkinter.Tk()
-    root.withdraw()
-    fTyp = [("", "*")]
-    iDir = os.path.abspath(os.path.dirname(__file__))
-    file = tkinter.filedialog.askopenfilename(filetypes=fTyp, initialdir=iDir)
-    return file
 
 if __name__ == '__main__':
-    filepath = selectFile()
-    music_bpm = bpm_analyze()
-    print(music_bpm)
     main()
